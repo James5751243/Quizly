@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quizly — Multiplayer Trivia</title>
+  <title>quizly.com — Multiplayer Trivia</title>
 
   <style>
     * { box-sizing: border-box; }
@@ -520,7 +520,7 @@
 </head>
 <body>
   <header>
-    <div class="logo">quiz<span>ly</span></div>
+    <div class="logo">quiz<span>ly.com</span></div>
     <div class="connection">
       <div id="connectionDot" class="connection-dot online"></div>
       <span id="connectionText">Local mode</span>
@@ -531,7 +531,7 @@
     <section id="homeScreen" class="screen">
       <div class="hero">
         <div class="pill">🔥 MULTIPLAYER TRIVIA</div>
-        <h1>QUIZ<span>LY</span></h1>
+        <h1>QUIZ<span>LY.COM</span></h1>
         <p>Think fast. Play together. Prove you're right.</p>
 
         <div class="home-actions">
@@ -623,7 +623,7 @@
       </div>
 
       <div class="timer-wrap">
-        <div id="gameTimer" class="timer">15</div>
+        <div id="gameTimer" class="timer">30</div>
       </div>
 
       <div class="question-card">
@@ -665,6 +665,7 @@
 
   <div id="toast" class="toast" aria-live="polite"></div>
 
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script>
     const QUESTIONS = [
       { category: 'Fishing', question: 'What tool is used to catch fish?', answers: ['Fishing rod', 'Tennis racket', 'Golf club', 'Broom'], correct: 0 },
@@ -712,7 +713,9 @@
       bestStreak: 0,
       correctAnswers: 0,
       hasAnswered: false,
-      timer: 15,
+      timer: 30,
+      peer: null,
+      connections: [],
       timerId: null
     };
 
@@ -792,7 +795,7 @@
 
     function startTimer() {
       clearInterval(state.timerId);
-      state.timer = 15;
+      state.timer = 30;
       updateTimer();
 
       state.timerId = setInterval(() => {
@@ -985,9 +988,9 @@
 
     document.getElementById('shareButton').addEventListener('click', () => {
       if (!state.roomCode) return;
-      const text = `Join my Quizly room: ${state.roomCode}`;
+      const text = `Join my quizly.com room: ${state.roomCode}`;
       if (navigator.share) {
-        navigator.share({ title: 'Quizly', text }).catch(() => {});
+        navigator.share({ title: 'quizly.com', text }).catch(() => {});
       } else {
         navigator.clipboard.writeText(text).then(() => showToast('Share text copied!')).catch(() => showToast('Share unavailable'));
       }

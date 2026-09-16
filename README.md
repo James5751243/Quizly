@@ -1,2 +1,2 @@
-# Quizly
-Quizly is a trivia game where you have to answer questions to get points the more points you get the better you are
+# quizly.com
+quizly.com is a trivia game where you answer questions to earn points.
