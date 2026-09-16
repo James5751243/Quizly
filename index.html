@@ -833,7 +833,10 @@
           state.connections = state.connections.filter((item) => item !== connection);
         });
       });
-      state.peer.on('error', () => showToast('Could not open this room. Try again.'));
+      state.peer.on('error', () => {
+        document.getElementById('connectionText').textContent = 'Room unavailable';
+        showToast('Could not open this room. Create a new room and try again.');
+      });
     }
 
     function handleGuestMessage(message) {
@@ -844,12 +847,13 @@
       if (message.type === 'start') startGame(message.questions, false);
     }
 
-    function connectToRoom(code) {
+    function connectToRoom(code, attempt = 0) {
       if (typeof Peer === 'undefined') {
         showToast('Online rooms are unavailable right now.');
         return;
       }
 
+      if (attempt > 0) closeNetwork();
       state.peer = new Peer();
       state.peer.on('open', () => {
         const connection = state.peer.connect(roomPeerId(code));
@@ -860,9 +864,24 @@
           showToast('Connected to the host.');
         });
         connection.on('data', handleGuestMessage);
-        connection.on('error', () => showToast('Could not connect to that room.'));
+        connection.on('error', () => {
+          if (attempt < 3) {
+            showToast(`Trying to connect (${attempt + 1}/3)...`);
+            setTimeout(() => connectToRoom(code, attempt + 1), 1200);
+          } else {
+            showToast('Room not found. Check the code and try again.');
+          }
+        });
       });
-      state.peer.on('error', () => showToast('Could not connect to that room.'));
+      state.peer.on('error', () => {
+        if (attempt < 3) {
+          showToast(`Trying to connect (${attempt + 1}/3)...`);
+          setTimeout(() => connectToRoom(code, attempt + 1), 1200);
+        } else {
+          document.getElementById('connectionText').textContent = 'Not connected';
+          showToast('Room not found. Check the code and try again.');
+        }
+      });
     }
 
     function updateTimer() {
