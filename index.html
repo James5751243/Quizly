@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quizly — Multiplayer Trivia</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --red: #ff1744;
+      --red2: #ff365d;
+      --dark-red: #b9002d;
+      --black: #050505;
+      --black2: #0b0b0b;
+      --card: #141414;
+      --card2: #1c1c1c;
+      --white: #ffffff;
+      --gray: #9c9c9c;
+      --green: #21e676;
+      --yellow: #ffd740;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(255, 23, 68, 0.15), transparent 28%),
+        radial-gradient(circle at 90% 90%, rgba(255, 23, 68, 0.08), transparent 30%),
+        var(--black);
+      color: var(--white);
+      font-family: Inter, Arial, Helvetica, sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .hidden { display: none !important; }
+
+    header {
+      height: 76px;
+      padding: 0 clamp(18px, 5vw, 70px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      background: rgba(5,5,5,.88);
+      backdrop-filter: blur(15px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 30px;
+      font-weight: 950;
+      letter-spacing: -1.5px;
+    }
+
+    .logo span { color: var(--red); }
+
+    .connection {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--gray);
+      font-size: 13px;
+    }
+
+    .connection-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--yellow);
+    }
+
+    .connection-dot.online {
+      background: var(--green);
+      box-shadow: 0 0 12px var(--green);
+    }
+
+    .connection-dot.offline {
+      background: var(--red);
+    }
+
+    main {
+      width: min(100%, 1050px);
+      margin: 0 auto;
+      padding: 45px 20px 80px;
+    }
+
+    .screen { width: 100%; }
+
+    .hero { text-align: center; padding-top: 35px; }
+
+    .pill {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      color: #ff6682;
+      background: rgba(255,23,68,.1);
+      border: 1px solid rgba(255,23,68,.3);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .5px;
+    }
+
+    .hero h1 {
+      margin: 22px 0 10px;
+      font-size: clamp(65px, 14vw, 145px);
+      line-height: .82;
+      font-weight: 1000;
+      letter-spacing: -8px;
+    }
+
+    .hero h1 span {
+      color: var(--red);
+      text-shadow: 0 0 40px rgba(255,23,68,.35);
+    }
+
+    .hero p {
+      color: var(--gray);
+      font-size: 19px;
+      margin: 25px auto 45px;
+    }
+
+    .home-actions {
+      width: min(100%, 650px);
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .big-button {
+      min-height: 130px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 20px;
+      color: white;
+      background: linear-gradient(145deg, #191919, #101010);
+      transition: transform .2s, border-color .2s, background .2s;
+    }
+
+    .big-button:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255,23,68,.6);
+      background: linear-gradient(145deg, #241015, #151515);
+    }
+
+    .big-button .icon {
+      display: block;
+      font-size: 34px;
+      margin-bottom: 8px;
+    }
+
+    .big-button strong {
+      display: block;
+      font-size: 20px;
+    }
+
+    .big-button small {
+      display: block;
+      color: var(--gray);
+      margin-top: 6px;
+    }
+
+    .panel {
+      width: min(100%, 650px);
+      margin: 25px auto;
+      padding: 30px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 22px;
+      background: linear-gradient(145deg, #181818, #0e0e0e);
+      box-shadow: 0 30px 80px rgba(0,0,0,.4);
+    }
+
+    .panel h2 { margin-top: 0; font-size: 28px; }
+    .panel-subtitle { color: var(--gray); margin-bottom: 25px; }
+
+    label {
+      display: block;
+      color: #ddd;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      height: 56px;
+      padding: 0 16px;
+      color: white;
+      background: #222;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(255,23,68,.12);
+    }
+
+    .primary {
+      width: 100%;
+      min-height: 54px;
+      margin-top: 18px;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      background: var(--red);
+      font-weight: 900;
+      transition: transform .2s, background .2s;
+    }
+
+    .primary:hover {
+      background: var(--red2);
+      transform: translateY(-2px);
+    }
+
+    .secondary {
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 10px;
+      color: white;
+      background: #202020;
+      font-weight: 800;
+    }
+
+    .secondary:hover { background: #292929; }
+
+    .back-button {
+      border: none;
+      color: var(--gray);
+      background: transparent;
+      margin-bottom: 10px;
+      padding: 5px 0;
+    }
+
+    .back-button:hover { color: white; }
+
+    .code-box {
+      text-align: center;
+      padding: 25px;
+      margin: 25px 0;
+      background: #090909;
+      border: 1px solid rgba(255,23,68,.35);
+      border-radius: 17px;
+    }
+
+    .code-label {
+      color: var(--gray);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+
+    .room-code {
+      margin: 8px 0 15px;
+      font-size: clamp(40px, 10vw, 70px);
+      line-height: 1;
+      letter-spacing: 10px;
+      font-weight: 1000;
+      color: var(--red);
+    }
+
+    .code-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .lobby-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .player-count { color: var(--gray); }
+
+    .player-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .player {
+      padding: 16px;
+      background: #202020;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      font-weight: 800;
+    }
+
+    .player.host {
+      border-color: rgba(255,23,68,.45);
+      background: rgba(255,23,68,.08);
+    }
+
+    .player small {
+      display: block;
+      color: var(--red2);
+      margin-top: 5px;
+      font-size: 11px;
+    }
+
+    .game-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      color: var(--gray);
+      font-size: 14px;
+    }
+
+    .game-score { color: var(--yellow); font-weight: 900; }
+
+    .progress-track {
+      width: 100%;
+      height: 7px;
+      border-radius: 99px;
+      overflow: hidden;
+      background: #222;
+      margin-bottom: 30px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--dark-red), var(--red));
+      transition: width .25s linear;
+    }
+
+    .timer-wrap { text-align: center; margin-bottom: 20px; }
+
+    .timer {
+      display: inline-flex;
+      width: 70px;
+      height: 70px;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid var(--red);
+      border-radius: 50%;
+      font-size: 24px;
+      font-weight: 1000;
+    }
+
+    .timer.warning { color: var(--yellow); border-color: var(--yellow); }
+    .timer.danger { animation: timerPulse .5s infinite alternate; }
+
+    @keyframes timerPulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    .question-card {
+      padding: clamp(25px, 5vw, 45px);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 22px;
+      background: linear-gradient(145deg, #191919, #101010);
+    }
+
+    .category {
+      display: inline-block;
+      color: #ff6682;
+      background: rgba(255,23,68,.1);
+      border: 1px solid rgba(255,23,68,.25);
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      margin-bottom: 18px;
+    }
+
+    .question {
+      font-size: clamp(25px, 4vw, 40px);
+      line-height: 1.15;
+      margin: 0 0 28px;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .answer {
+      min-height: 70px;
+      padding: 15px;
+      text-align: left;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 13px;
+      color: white;
+      background: #222;
+      transition: transform .15s, border-color .15s, background .15s;
+    }
+
+    .answer:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: rgba(255,23,68,.55);
+    }
+
+    .answer:disabled { cursor: default; }
+    .answer.correct {
+      color: var(--green);
+      border-color: var(--green);
+      background: rgba(33,230,118,.1);
+    }
+    .answer.wrong {
+      color: #ff6b87;
+      border-color: var(--red);
+      background: rgba(255,23,68,.1);
+    }
+
+    .letter {
+      display: inline-flex;
+      width: 31px;
+      height: 31px;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+      font-weight: 900;
+    }
+
+    .streak {
+      min-height: 25px;
+      text-align: center;
+      color: var(--red2);
+      font-weight: 900;
+      margin-top: 18px;
+    }
+
+    .results {
+      text-align: center;
+      padding-top: 35px;
+    }
+
+    .results h1 {
+      font-size: clamp(40px, 8vw, 70px);
+      margin-bottom: 10px;
+    }
+
+    .final-score {
+      color: var(--red);
+      font-size: clamp(70px, 15vw, 120px);
+      font-weight: 1000;
+      line-height: 1;
+    }
+
+    .result-message {
+      color: var(--gray);
+      font-size: 18px;
+      margin: 20px 0 35px;
+    }
+
+    .result-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .result-stat {
+      padding: 20px;
+      border-radius: 13px;
+      background: #1a1a1a;
+    }
+
+    .result-stat strong {
+      display: block;
+      font-size: 26px;
+    }
+
+    .result-stat span {
+      color: var(--gray);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 25px;
+      transform: translateX(-50%) translateY(20px);
+      padding: 13px 20px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 999px;
+      background: #1b1b1b;
+      color: white;
+      opacity: 0;
+      pointer-events: none;
+      transition: .25s;
+      z-index: 999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media(max-width:650px) {
+      main { padding: 30px 15px 60px; }
+      .home-actions { grid-template-columns: 1fr; }
+      .big-button { min-height: 100px; }
+      .answers { grid-template-columns: 1fr; }
+      .result-stats { grid-template-columns: 1fr; }
+      .room-code { letter-spacing: 5px; }
+      .panel { padding: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">quiz<span>ly</span></div>
+    <div class="connection">
+      <div id="connectionDot" class="connection-dot online"></div>
+      <span id="connectionText">Local mode</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="homeScreen" class="screen">
+      <div class="hero">
+        <div class="pill">🔥 MULTIPLAYER TRIVIA</div>
+        <h1>QUIZ<span>LY</span></h1>
+        <p>Think fast. Play together. Prove you're right.</p>
+
+        <div class="home-actions">
+          <button id="hostButton" class="big-button">
+            <span class="icon">👑</span>
+            <strong>Host Game</strong>
+            <small>Create a room</small>
+          </button>
+
+          <button id="joinButton" class="big-button">
+            <span class="icon">🎮</span>
+            <strong>Join Game</strong>
+            <small>Enter a room code</small>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="hostSetupScreen" class="screen hidden">
+      <div class="panel">
+        <button class="back-button" id="hostBack">← Back</button>
+        <h2>Host a Game</h2>
+        <p class="panel-subtitle">Create your room and invite your friends.</p>
+
+        <label for="hostName">Your name</label>
+        <input id="hostName" maxlength="20" placeholder="Enter your name" autocomplete="off">
+
+        <button id="createRoomButton" class="primary">CREATE GAME</button>
+      </div>
+    </section>
+
+    <section id="joinSetupScreen" class="screen hidden">
+      <div class="panel">
+        <button class="back-button" id="joinBack">← Back</button>
+        <h2>Join a Game</h2>
+        <p class="panel-subtitle">Enter the six-character code from your host.</p>
+
+        <label for="joinName">Your name</label>
+        <input id="joinName" maxlength="20" placeholder="Enter your name" autocomplete="off">
+
+        <br><br>
+
+        <label for="joinCode">Game code</label>
+        <input id="joinCode" maxlength="6" placeholder="ABC123" autocomplete="off" style="text-transform:uppercase; letter-spacing:5px; text-align:center; font-size:22px; font-weight:900;">
+
+        <button id="joinRoomButton" class="primary">JOIN GAME</button>
+      </div>
+    </section>
+
+    <section id="lobbyScreen" class="screen hidden">
+      <div class="panel">
+        <div class="lobby-header">
+          <div>
+            <div class="pill">GAME LOBBY</div>
+            <h2>Waiting for players</h2>
+          </div>
+          <div id="playerCount" class="player-count">0 players</div>
+        </div>
+
+        <div class="code-box">
+          <div class="code-label">GAME CODE</div>
+          <div id="roomCodeDisplay" class="room-code">------</div>
+          <div class="code-actions">
+            <button id="copyCodeButton" class="secondary">📋 Copy Code</button>
+            <button id="shareButton" class="secondary">🔗 Share</button>
+          </div>
+        </div>
+
+        <div id="playerList" class="player-list"></div>
+
+        <div id="hostControls">
+          <button id="startGameButton" class="primary">START GAME →</button>
+        </div>
+
+        <div id="guestWaiting" class="hidden" style="text-align:center; color:#999; padding:15px;">👑 Waiting for the host to start the game...</div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen hidden">
+      <div class="game-top">
+        <div>
+          Question <strong id="questionNumber">1</strong> / <strong id="questionTotal">30</strong>
+        </div>
+        <div class="game-score">SCORE: <span id="gameScore">0</span></div>
+      </div>
+
+      <div class="progress-track">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <div class="timer-wrap">
+        <div id="gameTimer" class="timer">15</div>
+      </div>
+
+      <div class="question-card">
+        <div id="gameCategory" class="category">MIXED</div>
+        <h2 id="gameQuestion" class="question">Loading...</h2>
+        <div id="gameAnswers" class="answers"></div>
+        <div id="gameStreak" class="streak"></div>
+      </div>
+    </section>
+
+    <section id="resultsScreen" class="screen hidden">
+      <div class="results">
+        <div class="pill">QUIZ COMPLETE</div>
+        <h1>Game Over</h1>
+        <div id="finalScore" class="final-score">0</div>
+        <p id="resultMessage" class="result-message">Nice work.</p>
+
+        <div class="panel">
+          <div class="result-stats">
+            <div class="result-stat">
+              <strong id="finalCorrect">0</strong>
+              <span>CORRECT</span>
+            </div>
+            <div class="result-stat">
+              <strong id="finalAccuracy">0%</strong>
+              <span>ACCURACY</span>
+            </div>
+            <div class="result-stat">
+              <strong id="finalStreak">0</strong>
+              <span>BEST STREAK</span>
+            </div>
+          </div>
+
+          <button id="returnHomeButton" class="primary">RETURN HOME</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script>
+    const QUESTIONS = [
+      { category: 'Fishing', question: 'What tool is used to catch fish?', answers: ['Fishing rod', 'Tennis racket', 'Golf club', 'Broom'], correct: 0 },
+      { category: 'Fishing', question: 'What do fish use to breathe underwater?', answers: ['Lungs', 'Gills', 'Wings', 'Fins'], correct: 1 },
+      { category: 'Fishing', question: 'What is bait used for?', answers: ['Attracting fish', 'Cleaning a boat', 'Measuring water', 'Tying shoes'], correct: 0 },
+      { category: 'Fishing', question: 'What is the small hook attached to fishing line called?', answers: ['Anchor', 'Lure', 'Oar', 'Compass'], correct: 1 },
+      { category: 'Fishing', question: 'Which fish is known for having sharp teeth and a long body?', answers: ['Pike', 'Goldfish', 'Tuna', 'Carp'], correct: 0 },
+      { category: 'Fishing', question: 'Where do freshwater fish live?', answers: ['Rivers and lakes', 'Only oceans', 'Deserts', 'Clouds'], correct: 0 },
+      { category: 'Fishing', question: 'What does a bobber help show?', answers: ['When a fish bites', 'The weather', 'The boat speed', 'The water temperature'], correct: 0 },
+      { category: 'Fishing', question: 'Which fish is commonly caught in the ocean?', answers: ['Salmon', 'Tuna', 'Trout', 'Bass'], correct: 1 },
+      { category: 'Fishing', question: 'What is a boat used for when fishing on a lake?', answers: ['Reaching fishing spots', 'Cooking food only', 'Building a dock', 'Making waves'], correct: 0 },
+      { category: 'Fishing', question: 'What should you wear to help stay safe on a boat?', answers: ['Life jacket', 'Winter hat only', 'Sandals', 'Sunglasses only'], correct: 0 },
+      { category: 'Easy Sports', question: 'How many players are on a soccer team on the field?', answers: ['9', '10', '11', '12'], correct: 2 },
+      { category: 'Easy Sports', question: 'What sport uses a bat and a ball?', answers: ['Baseball', 'Swimming', 'Tennis', 'Cycling'], correct: 0 },
+      { category: 'Easy Sports', question: 'How many points is a touchdown worth in American football?', answers: ['3', '6', '7', '8'], correct: 1 },
+      { category: 'Easy Sports', question: 'What sport is played at Wimbledon?', answers: ['Tennis', 'Hockey', 'Boxing', 'Golf'], correct: 0 },
+      { category: 'Easy Sports', question: 'What do basketball players try to score?', answers: ['Goals', 'Runs', 'Baskets', 'Tries'], correct: 2 },
+      { category: 'Easy Sports', question: 'How many rings are on the Olympic flag?', answers: ['3', '4', '5', '6'], correct: 2 },
+      { category: 'Easy Sports', question: 'What sport uses a puck?', answers: ['Ice hockey', 'Soccer', 'Volleyball', 'Golf'], correct: 0 },
+      { category: 'Easy Sports', question: 'In golf, what is used to hit the ball?', answers: ['A bat', 'A club', 'A racket', 'A stick'], correct: 1 },
+      { category: 'Easy Sports', question: 'What sport includes swimming, cycling, and running?', answers: ['Triathlon', 'Decathlon', 'Marathon', 'Pentathlon'], correct: 0 },
+      { category: 'Easy Sports', question: 'How many players are on a volleyball team on the court?', answers: ['4', '5', '6', '7'], correct: 2 },
+      { category: 'Easy Sports', question: 'What sport is played on a court with a net and a racket?', answers: ['Tennis', 'Rugby', 'Baseball', 'Wrestling'], correct: 0 },
+      { category: 'Easy Sports', question: 'What is the name of a perfect score in bowling?', answers: ['100', '200', '300', '500'], correct: 2 },
+
+      { category: 'Famous Games', question: 'What is Mario\'s brother\'s name?', answers: ['Luigi', 'Wario', 'Yoshi', 'Bowser'], correct: 0 },
+      { category: 'Famous Games', question: 'Which game features Creepers?', answers: ['Minecraft', 'Fortnite', 'FIFA', 'Mario Kart'], correct: 0 },
+      { category: 'Famous Games', question: 'What color is Sonic the Hedgehog?', answers: ['Blue', 'Red', 'Green', 'Yellow'], correct: 0 },
+      { category: 'Famous Games', question: 'Which game has the character Link?', answers: ['The Legend of Zelda', 'Minecraft', 'Fortnite', 'Pokemon'], correct: 0 },
+      { category: 'Famous Games', question: 'Which Pokemon is known for saying its own name?', answers: ['Pikachu', 'Mario', 'Kirby', 'Sonic'], correct: 0 },
+      { category: 'Famous Games', question: 'What game is famous for its Battle Royale mode?', answers: ['Fortnite', 'Tetris', 'Minecraft', 'Pac-Man'], correct: 0 },
+      { category: 'Famous Games', question: 'What is the name of Mario\'s rival who often wears yellow?', answers: ['Wario', 'Luigi', 'Link', 'Sonic'], correct: 0 },
+      { category: 'Famous Games', question: 'Which classic game has ghosts chasing a yellow character?', answers: ['Pac-Man', 'Minecraft', 'Fortnite', 'Pokemon'], correct: 0 },
+      { category: 'Famous Games', question: 'What game series features Pikachu?', answers: ['Pokemon', 'Mario Kart', 'Halo', 'FIFA'], correct: 0 },
+      { category: 'Famous Games', question: 'Which game is known for falling blocks that form lines?', answers: ['Tetris', 'Halo', 'Animal Crossing', 'Rocket League'], correct: 0 }
+    ];
+
+    const state = {
+      roomCode: '',
+      playerName: '',
+      isHost: false,
+      players: [],
+      currentQuestions: [],
+      currentQuestionIndex: 0,
+      currentScore: 0,
+      currentStreak: 0,
+      bestStreak: 0,
+      correctAnswers: 0,
+      hasAnswered: false,
+      timer: 15,
+      timerId: null
+    };
+
+    function showScreen(screen) {
+      [
+        'homeScreen',
+        'hostSetupScreen',
+        'joinSetupScreen',
+        'lobbyScreen',
+        'gameScreen',
+        'resultsScreen'
+      ].forEach((id) => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      screen.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timeout);
+      showToast.timeout = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let result = '';
+      for (let i = 0; i < 6; i++) {
+        result += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return result;
+    }
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function getQuestions() {
+      return shuffle(QUESTIONS).slice(0, 30);
+    }
+
+    function renderPlayers() {
+      const playerList = document.getElementById('playerList');
+      const playerCount = document.getElementById('playerCount');
+      playerList.innerHTML = '';
+
+      state.players.forEach((player) => {
+        const div = document.createElement('div');
+        div.className = 'player' + (player.host ? ' host' : '');
+        div.innerHTML = `<div>${player.name}</div><small>${player.host ? 'HOST' : 'PLAYER'}</small>`;
+        playerList.appendChild(div);
+      });
+
+      playerCount.textContent = `${state.players.length} player${state.players.length === 1 ? '' : 's'}`;
+    }
+
+    function setRoomCode(code) {
+      state.roomCode = code;
+      document.getElementById('roomCodeDisplay').textContent = code;
+    }
+
+    function updateTimer() {
+      const timerEl = document.getElementById('gameTimer');
+      timerEl.textContent = String(state.timer);
+      timerEl.classList.remove('warning', 'danger');
+
+      if (state.timer <= 5) timerEl.classList.add('danger');
+      else if (state.timer <= 9) timerEl.classList.add('warning');
+    }
+
+    function startTimer() {
+      clearInterval(state.timerId);
+      state.timer = 15;
+      updateTimer();
+
+      state.timerId = setInterval(() => {
+        state.timer -= 1;
+        if (state.timer <= 0) {
+          clearInterval(state.timerId);
+          revealAnswer(null, true);
+          return;
+        }
+        updateTimer();
+      }, 1000);
+    }
+
+    function updateProgress() {
+      const total = Math.max(1, state.currentQuestions.length);
+      const progress = ((state.currentQuestionIndex) / total) * 100;
+      document.getElementById('progressBar').style.width = `${Math.min(100, progress)}%`;
+      document.getElementById('questionNumber').textContent = String(Math.min(state.currentQuestionIndex + 1, state.currentQuestions.length));
+      document.getElementById('questionTotal').textContent = String(state.currentQuestions.length);
+      document.getElementById('gameScore').textContent = String(state.currentScore);
+    }
+
+    function renderQuestion() {
+      if (!state.currentQuestions.length) return;
+
+      const q = state.currentQuestions[state.currentQuestionIndex];
+      if (!q) return;
+
+      state.hasAnswered = false;
+      document.getElementById('gameCategory').textContent = q.category.toUpperCase();
+      document.getElementById('gameQuestion').textContent = q.question;
+      document.getElementById('gameStreak').textContent = state.currentStreak > 0 ? `🔥 Streak: ${state.currentStreak}` : '';
+
+      const answerContainer = document.getElementById('gameAnswers');
+      answerContainer.innerHTML = '';
+
+      const letters = ['A', 'B', 'C', 'D'];
+      q.answers.forEach((answer, idx) => {
+        const button = document.createElement('button');
+        button.className = 'answer';
+        button.type = 'button';
+        button.innerHTML = `<span class="letter">${letters[idx]}</span> ${answer}`;
+        button.addEventListener('click', () => revealAnswer(idx, false));
+        answerContainer.appendChild(button);
+      });
+
+      updateProgress();
+      startTimer();
+    }
+
+    function revealAnswer(selectedIndex, timedOut) {
+      if (state.hasAnswered) return;
+      state.hasAnswered = true;
+      clearInterval(state.timerId);
+
+      const q = state.currentQuestions[state.currentQuestionIndex];
+      const buttons = [...document.querySelectorAll('.answer')];
+
+      buttons.forEach((button, idx) => {
+        button.disabled = true;
+        if (idx === q.correct) button.classList.add('correct');
+        if (selectedIndex !== null && idx === selectedIndex && selectedIndex !== q.correct) button.classList.add('wrong');
+      });
+
+      if (selectedIndex === q.correct) {
+        const points = 10 + Math.max(0, state.currentStreak * 2);
+        state.currentScore += points;
+        state.currentStreak += 1;
+        state.bestStreak = Math.max(state.bestStreak, state.currentStreak);
+        state.correctAnswers += 1;
+        document.getElementById('gameStreak').textContent = `✅ Correct! +${points} pts`;
+      } else {
+        state.currentStreak = 0;
+        if (timedOut) {
+          document.getElementById('gameStreak').textContent = `⏰ Time's up! The correct answer was ${q.answers[q.correct]}.`;
+        } else {
+          document.getElementById('gameStreak').textContent = `❌ Wrong! Correct answer: ${q.answers[q.correct]}`;
+        }
+      }
+
+      document.getElementById('gameScore').textContent = String(state.currentScore);
+
+      setTimeout(() => {
+        state.currentQuestionIndex += 1;
+        if (state.currentQuestionIndex < state.currentQuestions.length) {
+          renderQuestion();
+        } else {
+          showResults();
+        }
+      }, 1400);
+    }
+
+    function showResults() {
+      const totalQuestions = state.currentQuestions.length;
+      const accuracy = totalQuestions ? Math.round((state.correctAnswers / totalQuestions) * 100) : 0;
+
+      document.getElementById('finalScore').textContent = String(state.currentScore);
+      document.getElementById('finalCorrect').textContent = String(state.correctAnswers);
+      document.getElementById('finalAccuracy').textContent = `${accuracy}%`;
+      document.getElementById('finalStreak').textContent = String(state.bestStreak);
+
+      let message = 'Nice work.';
+      if (accuracy >= 80) message = 'Excellent! You crushed it.';
+      else if (accuracy >= 50) message = 'Solid run — you know your stuff.';
+      else if (accuracy >= 30) message = 'Good effort. One more round and you will be flying.';
+      else if (accuracy === 0) message = 'A fresh start is always possible.';
+
+      document.getElementById('resultMessage').textContent = message;
+      showScreen(document.getElementById('resultsScreen'));
+    }
+
+    function resetGameState() {
+      state.currentQuestions = [];
+      state.currentQuestionIndex = 0;
+      state.currentScore = 0;
+      state.currentStreak = 0;
+      state.bestStreak = 0;
+      state.correctAnswers = 0;
+      state.hasAnswered = false;
+      clearInterval(state.timerId);
+    }
+
+    function startGame() {
+      resetGameState();
+      state.currentQuestions = getQuestions();
+      renderQuestion();
+      showScreen(document.getElementById('gameScreen'));
+    }
+
+    function joinGame() {
+      const name = document.getElementById('joinName').value.trim();
+      const code = document.getElementById('joinCode').value.trim().toUpperCase();
+
+      if (!name) {
+        showToast('Enter your name first.');
+        return;
+      }
+
+      if (!code) {
+        showToast('Enter a valid room code.');
+        return;
+      }
+
+      state.playerName = name;
+      state.isHost = false;
+      state.players = [{ name, host: false }];
+
+      document.getElementById('hostControls').classList.add('hidden');
+      document.getElementById('guestWaiting').classList.remove('hidden');
+      showScreen(document.getElementById('lobbyScreen'));
+      renderPlayers();
+      showToast('Joined the room!');
+    }
+
+    function createRoom() {
+      const name = document.getElementById('hostName').value.trim();
+      if (!name) {
+        showToast('Enter your name first.');
+        return;
+      }
+
+      state.playerName = name;
+      state.isHost = true;
+      state.players = [{ name, host: true }];
+      setRoomCode(generateRoomCode());
+      renderPlayers();
+      showScreen(document.getElementById('lobbyScreen'));
+      showToast('Game created!');
+      document.getElementById('hostControls').classList.remove('hidden');
+      document.getElementById('guestWaiting').classList.add('hidden');
+    }
+
+    document.getElementById('hostButton').addEventListener('click', () => showScreen(document.getElementById('hostSetupScreen')));
+    document.getElementById('joinButton').addEventListener('click', () => showScreen(document.getElementById('joinSetupScreen')));
+    document.getElementById('hostBack').addEventListener('click', () => showScreen(document.getElementById('homeScreen')));
+    document.getElementById('joinBack').addEventListener('click', () => showScreen(document.getElementById('homeScreen')));
+    document.getElementById('createRoomButton').addEventListener('click', createRoom);
+    document.getElementById('joinRoomButton').addEventListener('click', joinGame);
+    document.getElementById('startGameButton').addEventListener('click', startGame);
+
+    document.getElementById('copyCodeButton').addEventListener('click', async () => {
+      if (!state.roomCode) return;
+      try {
+        await navigator.clipboard.writeText(state.roomCode);
+        showToast('Code copied!');
+      } catch {
+        showToast('Copy failed.');
+      }
+    });
+
+    document.getElementById('shareButton').addEventListener('click', () => {
+      if (!state.roomCode) return;
+      const text = `Join my Quizly room: ${state.roomCode}`;
+      if (navigator.share) {
+        navigator.share({ title: 'Quizly', text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text).then(() => showToast('Share text copied!')).catch(() => showToast('Share unavailable'));
+      }
+    });
+
+    document.getElementById('returnHomeButton').addEventListener('click', () => {
+      state.roomCode = '';
+      state.players = [];
+      renderPlayers();
+      document.getElementById('joinCode').value = '';
+      document.getElementById('hostName').value = '';
+      document.getElementById('joinName').value = '';
+      showScreen(document.getElementById('homeScreen'));
+    });
+
+    renderPlayers();
+  </script>
+</body>
+</html>
