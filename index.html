@@ -784,6 +784,87 @@
       document.getElementById('roomCodeDisplay').textContent = code;
     }
 
+    function roomPeerId(code) {
+      return `quizly-${code.toLowerCase()}`;
+    }
+
+    function closeNetwork() {
+      state.connections.forEach((connection) => connection.close());
+      state.connections = [];
+      if (state.peer) {
+        state.peer.destroy();
+        state.peer = null;
+      }
+    }
+
+    function broadcast(message) {
+      state.connections.forEach((connection) => {
+        if (connection.open) connection.send(message);
+      });
+    }
+
+    function sendLobby(connection) {
+      connection.send({ type: 'lobby', players: state.players });
+    }
+
+    function setupHostNetwork() {
+      if (typeof Peer === 'undefined') {
+        showToast('Online rooms are unavailable right now.');
+        return;
+      }
+
+      state.peer = new Peer(roomPeerId(state.roomCode));
+      state.peer.on('open', () => {
+        document.getElementById('connectionText').textContent = 'Room online';
+        showToast('Room is online. Share the code!');
+      });
+      state.peer.on('connection', (connection) => {
+        state.connections.push(connection);
+        connection.on('data', (message) => {
+          if (message.type !== 'join') return;
+          if (!state.players.some((player) => player.name === message.name)) {
+            state.players.push({ name: message.name, host: false });
+            renderPlayers();
+            broadcast({ type: 'lobby', players: state.players });
+          }
+          sendLobby(connection);
+        });
+        connection.on('close', () => {
+          state.connections = state.connections.filter((item) => item !== connection);
+        });
+      });
+      state.peer.on('error', () => showToast('Could not open this room. Try again.'));
+    }
+
+    function handleGuestMessage(message) {
+      if (message.type === 'lobby') {
+        state.players = message.players;
+        renderPlayers();
+      }
+      if (message.type === 'start') startGame(message.questions, false);
+    }
+
+    function connectToRoom(code) {
+      if (typeof Peer === 'undefined') {
+        showToast('Online rooms are unavailable right now.');
+        return;
+      }
+
+      state.peer = new Peer();
+      state.peer.on('open', () => {
+        const connection = state.peer.connect(roomPeerId(code));
+        state.connections = [connection];
+        connection.on('open', () => {
+          connection.send({ type: 'join', name: state.playerName });
+          document.getElementById('connectionText').textContent = 'Room connected';
+          showToast('Connected to the host.');
+        });
+        connection.on('data', handleGuestMessage);
+        connection.on('error', () => showToast('Could not connect to that room.'));
+      });
+      state.peer.on('error', () => showToast('Could not connect to that room.'));
+    }
+
     function updateTimer() {
       const timerEl = document.getElementById('gameTimer');
       timerEl.textContent = String(state.timer);
@@ -918,9 +999,10 @@
       clearInterval(state.timerId);
     }
 
-    function startGame() {
+    function startGame(questions = null, announce = true) {
       resetGameState();
-      state.currentQuestions = getQuestions();
+      state.currentQuestions = questions || getQuestions();
+      if (state.isHost && announce) broadcast({ type: 'start', questions: state.currentQuestions });
       renderQuestion();
       showScreen(document.getElementById('gameScreen'));
     }
@@ -941,13 +1023,14 @@
 
       state.playerName = name;
       state.isHost = false;
+      setRoomCode(code);
       state.players = [{ name, host: false }];
 
       document.getElementById('hostControls').classList.add('hidden');
       document.getElementById('guestWaiting').classList.remove('hidden');
       showScreen(document.getElementById('lobbyScreen'));
       renderPlayers();
-      showToast('Joined the room!');
+      connectToRoom(code);
     }
 
     function createRoom() {
@@ -961,11 +1044,13 @@
       state.isHost = true;
       state.players = [{ name, host: true }];
       setRoomCode(generateRoomCode());
+      closeNetwork();
       renderPlayers();
       showScreen(document.getElementById('lobbyScreen'));
       showToast('Game created!');
       document.getElementById('hostControls').classList.remove('hidden');
       document.getElementById('guestWaiting').classList.add('hidden');
+      setupHostNetwork();
     }
 
     document.getElementById('hostButton').addEventListener('click', () => showScreen(document.getElementById('hostSetupScreen')));
@@ -997,6 +1082,7 @@
     });
 
     document.getElementById('returnHomeButton').addEventListener('click', () => {
+      closeNetwork();
       state.roomCode = '';
       state.players = [];
       renderPlayers();
